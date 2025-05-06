@@ -5,8 +5,13 @@ const router = express.Router();
 // Function to fetch Reddit posts
 const fetchRedditPosts = async () => {
   try {
-    const redditRes = await axios.get('https://www.reddit.com/r/popular.json');
-    return redditRes.data.data.children.slice(0, 5).map(post => ({
+    const redditRes = await axios.get('https://www.reddit.com/r/popular.json', {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+        'Accept': 'application/json'
+      }
+    });
+        return redditRes.data.data.children.slice(0, 5).map(post => ({
       id: post.data.id,
       title: post.data.title,
       link: `https://www.reddit.com${post.data.permalink}`,

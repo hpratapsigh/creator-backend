@@ -2,16 +2,43 @@ const express = require('express');
 const axios = require('axios');
 const router = express.Router();
 
-// Function to fetch Reddit posts
+// Function to fetch Reddit post
+const getRedditAccessToken = async () => {
+  const clientId = process.env.REDDIT_CLIENT_ID;
+  const clientSecret = process.env.REDDIT_CLIENT_SECRET;
+
+  if (!clientId || !clientSecret) {
+    throw new Error('Missing Reddit client ID or secret in environment variables.');
+  }
+
+  const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
+
+  const res = await axios.post(
+    'https://www.reddit.com/api/v1/access_token',
+    'grant_type=client_credentials',
+    {
+      headers: {
+        Authorization: `Basic ${credentials}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+    }
+  );
+
+  return res.data.access_token;
+};
+
 const fetchRedditPosts = async () => {
   try {
-    const redditRes = await axios.get('https://www.reddit.com/r/popular.json', {
+    const token = await getRedditAccessToken();
+
+    const redditRes = await axios.get('https://oauth.reddit.com/r/popular', {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-        'Accept': 'application/json'
-      }
+        Authorization: `Bearer ${token}`,
+        'User-Agent': 'creator-app/1.0 by Hemantsinghrajput',
+      },
     });
-        return redditRes.data.data.children.slice(0, 5).map(post => ({
+
+    return redditRes.data.data.children.slice(0, 5).map((post: any) => ({
       id: post.data.id,
       title: post.data.title,
       link: `https://www.reddit.com${post.data.permalink}`,
